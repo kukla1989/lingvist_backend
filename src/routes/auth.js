@@ -6,9 +6,19 @@ const asyncHandler = require("../utils/asyncHandler");
 const router = Router();
 
 router.post("/register", asyncHandler(async (req, res) => {
-  const { name, password } = req.body;
+  const { name, email, password } = req.body;
+  const isNameTaken = await User.findOne({ where : { name }})
+  if (isNameTaken !== null) {
+    return res.status(400).json({ error: "Name is taken" });
+  }
+
+  const isEmailTaken = await User.findOne({ where : { email }})
+  if (isEmailTaken !== null) {
+    return res.status(400).json({ error: "Email is taken" });
+  }
+
   const hashed = await hashPassword(password);
-  const user = await User.create({ name, password: hashed });
+  const user = await User.create({ name, email, password: hashed });
   res.json({ message: "User registered", id: user.id });
 }));
 

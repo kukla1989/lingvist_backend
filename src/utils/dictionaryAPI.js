@@ -1,9 +1,9 @@
-const dicionaryApiURL = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
-const mymemoryApiURL = 'https://api.mymemory.translated.net';
+const dictionaryApiURL = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
+const myMemoryApiURL = 'https://api.mymemory.translated.net';
 
 async function fetchWordTranslation(word) {
   try {
-    const res = await fetch(dicionaryApiURL + word.trim());
+    const res = await fetch(dictionaryApiURL + word.trim());
     const data = await res.json();
     const phonetic = data[0].phonetics[0];
 
@@ -54,7 +54,7 @@ function formatMeanings(meanings) {
 async function translate(text, { from = 'en', to = 'uk' } = {}) {
   try {
     const res = await fetch(
-      `${mymemoryApiURL}/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
+      `${myMemoryApiURL}/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
     );
 
     const data = await res.json();
@@ -69,5 +69,7 @@ async function translate(text, { from = 'en', to = 'uk' } = {}) {
     return text;
   }
 }
+
+module.exports = { fetchWordTranslation };
 
 

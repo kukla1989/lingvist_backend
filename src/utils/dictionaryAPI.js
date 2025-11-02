@@ -1,18 +1,21 @@
-const dictionaryApiURL = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
-const myMemoryApiURL = 'https://api.mymemory.translated.net';
+require('dotenv').config();
+
+const merriamApiURL = 'https://www.dictionaryapi.com/api/v3/references/collegiate/json/'
+const merriamApikey = process.env.MERRIAM_API_KEY;
+console.log(merriamApikey, 'merriamApikey')
+const myMemoryApiURL = 'https://api.mymemory.translated.net'; // limit 50 000 chars/day.
+const mail = 'roma1987@protonmail.com';
 
 async function fetchWordTranslation(word) {
   try {
-    const res = await fetch(dictionaryApiURL + word.trim());
-    const data = await res.json();
-    const phonetic = data[0].phonetics[0];
+    const data = await fetch(`${merriamApiURL + word.trim()}?key=${merriamApikey}`);
+    const response = await data.json();
 
     return addUkrainianTranslations({
       word,
-      pronunciation: phonetic?.text || null,
-      audio: phonetic?.audio || null,
-      wikipedia: phonetic?.sourceUrl || null,
-      translations: formatMeanings(data[0].meanings)
+      pronunciation: response[0]?.hwi.prs[0].mw || null,
+      audio: response[0]?.hwi.prs[0].sound.audio || null,
+      translations: extractDefinitions(response),
     })
   } catch (error) {
     console.error(error);
@@ -20,41 +23,47 @@ async function fetchWordTranslation(word) {
 }
 
 async function addUkrainianTranslations(word) {
-  const meanings = [word.word]
-  word.translations.forEach(partOfSpeech => partOfSpeech[1]
-    .forEach(pair => meanings.push(pair[0], pair[1]))
-  )
+  let meanings = [word.word]
+  Object.entries(word.translations)
+    .forEach(partOfSpeech => partOfSpeech[1]
+      .slice(0, 2)
+      .forEach(el => el
+        .slice(0, 2)
+        .forEach(pair => {
+          meanings.push(pair.definition)
+          if (pair.example) {
+            meanings.push(pair.example)
+          }
+        })
+      ))
+
+  meanings = meanings.map(sentence => removeBraces(sentence))
 
   const promises = meanings.filter(Boolean)
     .map(text => translate(text))
-  const ukrTranslate = await Promise.all(promises)
+  const ukrMeanings = await Promise.all(promises)
 
-  word.wordTranslation = ukrTranslate.shift()
+  word.wordTranslation = ukrMeanings.shift()
     .replace(/[^А-Яа-яҐґЄєІіЇї\s]/g, '');
 
-  word.translations.forEach(partOfSpeech => partOfSpeech[1]
-    .forEach(pair => {
-      pair.splice(1, 0, ukrTranslate.shift())
-      pair[2] && pair.push(ukrTranslate.shift())
-    })
-  )
+  Object.entries(word.translations)
+    .forEach(partOfSpeech => partOfSpeech[1]
+      .slice(0, 2)
+      .forEach(el => el
+        .slice(0, 2)
+        .forEach(pair => {
+          pair.ukrDefinition = ukrMeanings.shift()
+          pair.example && (pair.ukrExample = ukrMeanings.shift())
+        })
+      ))
 
   return word;
-}
-
-function formatMeanings(meanings) {
-  return meanings.map(meaning => [
-    meaning.partOfSpeech,
-    meaning.definitions
-      .map(definition => [
-        definition.definition, definition?.example || null
-      ])])
 }
 
 async function translate(text, { from = 'en', to = 'uk' } = {}) {
   try {
     const res = await fetch(
-      `${myMemoryApiURL}/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
+      `${myMemoryApiURL}/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}&de=${mail}`
     );
 
     const data = await res.json();
@@ -70,6 +79,63 @@ async function translate(text, { from = 'en', to = 'uk' } = {}) {
   }
 }
 
-module.exports = { fetchWordTranslation };
+/**
+ *
+ * @param data
+ * * @returns {{ noun: { definition: string, example: string }[] }}
+ * */
+function extractDefinitions(data) {
+  const res = {};
+
+  data.forEach(el => {
+    const definitions = formatDefinitions(el);
+    const partOfSpeech = el.fl;
+
+    if (res[partOfSpeech]) {
+      res[partOfSpeech].push(...definitions);
+    } else {
+      res[partOfSpeech] = definitions;
+    }
+  })
+
+  return res
+}
+
+function formatDefinitions(data) {
+  const res = []
+
+  data.def[0].sseq.map(el => {
+    const definitions = []
+    el.forEach(el => {
+      if (el.dt === undefined) {
+        definitions.push({
+            definition: el[1].dt[0][1],
+            example: el[1]?.dt?.[1]?.[1]?.[0]?.t ?? null
+          }
+        );
+      }
+
+      definitions.push({
+          definition: el[1].dt[0][1],
+          example: (el[1].dt[1] || null) && el[1].dt[1][1][0].t
+        }
+      )
+    })
+
+    res.push(definitions)
+  })
+
+  return res;
+}
+
+
+function removeBraces(str) {
+  return str
+    .replace(/\{sx\|([^|]*)\|\|[^}]*}/g, '$1') // retrieve 'string' from {sx|string||...}
+    .replace(/\{[^}]*}/g, '')                  // delete all other {string}
+    .trim();
+}
+
+module.exports = { fetchWordTranslation, translate };
 
 

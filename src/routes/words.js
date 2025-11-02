@@ -24,7 +24,6 @@ router.post("/", asyncHandler(async (req, res) => {
 }));
 
 router.post("/new", asyncHandler(async (req, res) => {
-  console.log(fetchWordTranslation, 'fetchWordTranslation~~Q!!!!!!!!!!!!!!!!!!!!!!!!!!!');
   const { word } = req.body;
   if (!word) return res.status(400).json({ error: "Word is required" });
 

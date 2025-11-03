@@ -2,7 +2,6 @@ require('dotenv').config();
 
 const merriamApiURL = 'https://www.dictionaryapi.com/api/v3/references/collegiate/json/'
 const merriamApikey = process.env.MERRIAM_API_KEY;
-console.log(merriamApikey, 'merriamApikey')
 const myMemoryApiURL = 'https://api.mymemory.translated.net'; // limit 50 000 chars/day.
 const mail = 'roma1987@protonmail.com';
 
@@ -106,20 +105,31 @@ function formatDefinitions(data) {
 
   data.def[0].sseq.map(el => {
     const definitions = []
+
     el.forEach(el => {
       if (el.dt === undefined) {
+        if (!Array.isArray(el[1])) {
+          definitions.push({
+            definition: el[1].dt[0][1],
+          })
+
+          return;
+        }
+
+        el[1].forEach(el => {
+            definitions.push({
+              definition: el[1].dt[0][1],
+              example: el[1]?.dt?.[1]?.[1]?.[0]?.t ?? null
+            })
+          }
+        )
+      } else {
         definitions.push({
             definition: el[1].dt[0][1],
-            example: el[1]?.dt?.[1]?.[1]?.[0]?.t ?? null
+            example: (el[1].dt[1] || null) && el[1].dt[1][1][0].t
           }
-        );
+        )
       }
-
-      definitions.push({
-          definition: el[1].dt[0][1],
-          example: (el[1].dt[1] || null) && el[1].dt[1][1][0].t
-        }
-      )
     })
 
     res.push(definitions)

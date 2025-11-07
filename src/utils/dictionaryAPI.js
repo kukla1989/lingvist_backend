@@ -9,16 +9,29 @@ async function fetchWordTranslation(word) {
   try {
     const data = await fetch(`${merriamApiURL + word.trim()}?key=${merriamApikey}`);
     const response = await data.json();
+    if (response.length === 0) {
+      return { notFound: true }
+    }
+
+    if (isArrayOfStrings(response)) {
+      return { misspelled: true, similarWords: response }
+    }
 
     return addUkrainianTranslations({
       word,
-      pronunciation: response[0]?.hwi.prs[0].mw || null,
-      audio: response[0]?.hwi.prs[0].sound.audio || null,
+      pronunciation: response[0]?.hwi?.prs?.[0]?.mw || null,
+      audio: response[0]?.hwi?.prs?.[0]?.sound?.audio || null,
       translations: extractDefinitions(response),
+      notFound: false,
+      misspelled: false,
     })
   } catch (error) {
     console.error(error);
   }
+}
+
+function isArrayOfStrings(arr) {
+  return arr.every(el => typeof el === 'string');
 }
 
 async function addUkrainianTranslations(word) {
@@ -87,6 +100,10 @@ function extractDefinitions(data) {
   const res = {};
 
   data.forEach(el => {
+    if (el.def === undefined) {
+      return;
+    }
+
     const definitions = formatDefinitions(el);
     const partOfSpeech = el.fl;
 
@@ -107,8 +124,11 @@ function formatDefinitions(data) {
     const definitions = []
 
     el.forEach(el => {
-      if (el.dt === undefined) {
+      if (el[1].dt === undefined) {
         if (!Array.isArray(el[1])) {
+          if (Array.isArray(el[1].dt[0][1])) {
+            return;
+          }
           definitions.push({
             definition: el[1].dt[0][1],
           })
@@ -116,13 +136,23 @@ function formatDefinitions(data) {
           return;
         }
 
-        el[1].forEach(el => {
+        el[1].forEach(elem => {
             definitions.push({
-              definition: el[1].dt[0][1],
-              example: el[1]?.dt?.[1]?.[1]?.[0]?.t ?? null
+              definition: elem[1]?.sense?.dt?.[0]?.[1] || elem[1].dt[0][1]?.[0][1]?.[1]?.[0]?.t
+                || elem[1].dt[0][1]?.[0][1] || elem[1].dt[0][1],
+              example: elem[1]?.dt?.[1]?.[1]?.[0]?.t ?? null
+              // 2 (elem[1].dt[0][1]?.[0][1]?.[1]?.[0]?.t) example - word good adjective 13
             })
           }
         )
+      } else if (Array.isArray(el[1].dt[0][1])) {
+        // skip
+
+        // definitions.push({
+        //     definition: el[1].dt[0][1][0][1],
+        //     example: (el[1].dt[1] || null) && el[1].dt[1][1][0].t
+        //   }
+        // )
       } else {
         definitions.push({
             definition: el[1].dt[0][1],

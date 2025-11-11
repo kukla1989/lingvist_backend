@@ -126,11 +126,14 @@ function formatDefinitions(data) {
     el.forEach(el => {
       if (el[1].dt === undefined) {
         if (!Array.isArray(el[1])) {
-          if (Array.isArray(el[1].dt[0][1])) {
+          if (Array.isArray(el[1]?.dt?.[0]?.[1])) {
             return;
           }
+          const definition = el[1]?.et?.[0]?.[1] || el[1]?.sense?.dt?.[0]?.[1];
+          if(!definition) return;
+
           definitions.push({
-            definition: el[1].dt[0][1],
+            definition,
           })
 
           return;
@@ -156,7 +159,7 @@ function formatDefinitions(data) {
       } else {
         definitions.push({
             definition: el[1].dt[0][1],
-            example: (el[1].dt[1] || null) && el[1].dt[1][1][0].t
+            example: (el[1].dt[1] || null) && el[1].dt[1][1][0]?.t
           }
         )
       }
@@ -170,12 +173,14 @@ function formatDefinitions(data) {
 
 
 function removeBraces(str) {
+  if (!str) return str;
+
   return str
     .replace(/\{sx\|([^|]*)\|\|[^}]*}/g, '$1') // retrieve 'string' from {sx|string||...}
     .replace(/\{[^}]*}/g, '')                  // delete all other {string}
     .trim();
 }
 
-module.exports = { fetchWordTranslation, translate };
+module.exports = { fetchWordTranslation, translate, removeBraces };
 
 

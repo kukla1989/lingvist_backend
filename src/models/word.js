@@ -1,10 +1,7 @@
-const { DataTypes, Model } = require("sequelize");
+const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
-class Word extends Model {}
-
-Word.init(
-  {
+const Word = sequelize.define('Word', {
     word: { type: DataTypes.STRING, allowNull: false },
     translation: { type: DataTypes.STRING, allowNull: false },
     sentence: { type: DataTypes.STRING, allowNull: true },
@@ -12,7 +9,6 @@ Word.init(
     ukr_sentence: { type: DataTypes.STRING, allowNull: true },
     definition: { type: DataTypes.STRING, allowNull: false },
   },
-  { sequelize, modelName: "Word" }
 );
 
 module.exports = Word;

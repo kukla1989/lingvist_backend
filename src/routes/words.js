@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const Word = require("../models/words");
+const Word = require("../models/word");
 const asyncHandler = require("../utils/asyncHandler");
 const { fetchWordTranslation } = require("../utils/dictionaryAPI");
 

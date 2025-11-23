@@ -7,7 +7,6 @@ const hashPassword = (password) => bcrypt.hash(password, 10);
 const comparePassword = (password, hash) => bcrypt.compare(password, hash);
 const generateToken = (userId) => jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
 
-// middleware
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) return res.status(401).json({ error: "No token" });

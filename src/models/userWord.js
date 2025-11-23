@@ -1,19 +1,29 @@
-const { DataTypes, Model } = require("sequelize");
+const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
+const Word = require("./word");
 const User = require("./user");
-const Word = require("./words");
 
-class UserWord extends Model {}
-
-UserWord.init(
-  {
-    count_repeat: { type: DataTypes.INTEGER, defaultValue: 0 },
+const UserWord = sequelize.define('UserWords', {
+    UserId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: User,
+        key: "id"
+      },
+    },
+    WordId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: Word,
+        key: "id",
+      }
+    },
+    countRepeat: {
+      type: DataTypes.INTEGER,
+      defaultValue: 5,
+      field: "countRepeat"
+    },
   },
-  { sequelize, modelName: "UserWord" }
 );
-
-// зв’язки
-User.belongsToMany(Word, { through: UserWord });
-Word.belongsToMany(User, { through: UserWord });
 
 module.exports = UserWord;

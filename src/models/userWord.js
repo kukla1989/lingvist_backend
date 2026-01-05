@@ -20,7 +20,7 @@ const UserWord = sequelize.define('UserWords', {
     },
     countRepeat: {
       type: DataTypes.INTEGER,
-      defaultValue: 5,
+      defaultValue: 1,
       field: "countRepeat"
     },
   },

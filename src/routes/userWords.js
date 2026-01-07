@@ -102,6 +102,35 @@ router.post("/add", authMiddleware, asyncHandler(async (req, res) => {
   }
 }));
 
+router.patch(
+  "/:wordId/repeat",
+  authMiddleware,
+  asyncHandler(async (req, res) => {
+    const { wordId } = req.params;
+    const { userId } = req;
+
+    const userWord = await UserWord.findOne({
+      where: {
+        UserId: userId,
+        WordId: wordId,
+      },
+    });
+
+    if (!userWord) {
+      return res.status(404).json({ error: "Word not found for this user" });
+    }
+
+    userWord.countRepeat += 1;
+    await userWord.save();
+
+    res.json({
+      success: true,
+      countRepeat: userWord.countRepeat,
+    });
+  })
+);
+
+
 router.delete("/:wordId", authMiddleware, asyncHandler(async (req, res) => {
   const { wordId } = req.params;
   const user = await User.findByPk(req.userId);

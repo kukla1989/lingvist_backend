@@ -91,7 +91,7 @@ router.post("/add", authMiddleware, asyncHandler(async (req, res) => {
     const user = await User.findByPk(userId);
 
     await user.addWord(wordRecord, {
-      through: { countRepeat: 1 }
+      through: { countRepeat: 0 }
     });
 
     res.json({ success: true, msg: 'word successfully added' });

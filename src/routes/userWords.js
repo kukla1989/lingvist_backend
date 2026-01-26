@@ -103,10 +103,10 @@ router.post("/add", authMiddleware, asyncHandler(async (req, res) => {
 }));
 
 router.patch(
-  "/:wordId/repeat",
+  "/:wordId/repeat/:count?",
   authMiddleware,
   asyncHandler(async (req, res) => {
-    const { wordId } = req.params;
+    const { wordId, count } = req.params;
     const { userId } = req;
 
     const userWord = await UserWord.findOne({
@@ -120,7 +120,12 @@ router.patch(
       return res.status(404).json({ error: "Word not found for this user" });
     }
 
-    userWord.countRepeat += 1;
+    if (count !== undefined) {
+      userWord.countRepeat = Number(count);
+    } else {
+      userWord.countRepeat += 1;
+    }
+
     await userWord.save();
 
     res.json({
